@@ -331,7 +331,7 @@
 
             // Listen for CSS transition end on elem (set by transition)
             if (this.RS.cssTransitions) {
-                $(this.listenTo).one('webkitTransitionEnd transitionend oTransitionEnd msTransitionend MSTransitionEnd', function () {
+                $(this.listenTo).one('webkitTransitionEnd transitionend otransitionend msTransitionend MSTransitionEnd', function () {
                     // Post-transition reset
                     _this.after();
                 });
