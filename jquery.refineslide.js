@@ -304,6 +304,10 @@
         ,before: function (callback) {
             var _this = this;
 
+            // Store current slide attributes for reapplication after transition
+            var currentSlideAttributes = this.RS.$currentSlide.attr('style');
+            var nextSlideAttributes = this.RS.$nextSlide.attr('style');
+
             // Prepare slide opacity & z-index
             this.RS.$currentSlide.css('z-index', 2);
             this.RS.$nextSlide.css({'opacity' : 1, 'z-index' : 1});
@@ -333,16 +337,18 @@
             if (this.RS.cssTransitions) {
                 $(this.listenTo).one('webkitTransitionEnd transitionend oTransitionEnd msTransitionend MSTransitionEnd', function () {
                     // Post-transition reset
-                    _this.after();
+                    _this.after(currentSlideAttributes, nextSlideAttributes);
                 });
             }
         }
 
-        ,after: function () {
+        ,after: function (currentSlideAttributes, nextSlideAttributes) {
             // Reset transition CSS
             this.RS.$slider.removeAttr('style');
-            this.RS.$currentSlide.removeAttr('style').css('opacity', 0);
-            this.RS.$nextSlide.removeAttr('style').css({'z-index': 2,'opacity' : 1});
+            this.RS.$currentSlide.attr('style', currentSlideAttributes);
+            this.RS.$nextSlide.attr('style', nextSlideAttributes);
+            this.RS.$currentSlide.css({'z-index': '', 'opacity': 0});
+            this.RS.$nextSlide.css({'z-index': 2, 'opacity' : 1});
 
             // Additional reset steps required by transition (if any exist)
             if (typeof this.reset === 'function') this.reset();
@@ -366,6 +372,10 @@
         ,fade: function () {
             var _this = this;
 
+            // Store current slide attributes for reapplication after transition
+            var currentSlideAttributes = this.RS.$currentSlide.attr('style');
+            var nextSlideAttributes = this.RS.$nextSlide.attr('style');
+
             // If CSS transitions are supported by browser
             if (this.RS.cssTransitions) {
                 // Setup steps
@@ -385,7 +395,7 @@
                 this.execute = function () {
                     _this.RS.$currentSlide.animate({'opacity' : 0}, _this.RS.settings['transitionDuration'], function () {
                         // Reset steps
-                        _this.after();
+                        _this.after(currentSlideAttributes, nextSlideAttributes);
                     });
                 }
             }
