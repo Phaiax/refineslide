@@ -67,7 +67,7 @@
 
             // Add slide identifying classes
             for (var i = 0; i < this.totalSlides; i++) {
-                $(this.$slides[i]).attr('class', 'rs-slide-' + i);
+                $(this.$slides[i]).addClass('rs-slide-' + i);
             }
 
             // Setup slideshow
