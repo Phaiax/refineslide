@@ -14,8 +14,9 @@
 
 	// Baked-in settings for extension
 	var defaults = {
-		transition            : 'cubeV',  // String (default 'cubeV'): Transition type ('random', 'cubeH', 'cubeV', 'fade', 'sliceH', 'sliceV', 'slideH', 'slideV', 'scale', 'blockScale', 'kaleidoscope', 'fan', 'blindH', 'blindV')
-		fallback3d            : 'sliceV', // String (default 'sliceV'): Fallback for browsers that support transitions, but not 3d transforms (only used if primary transition makes use of 3d-transforms)
+		transition            : 'cubeV',  // String (default 'cubeV'): Transition type ('custom', random', 'cubeH', 'cubeV', 'fade', 'sliceH', 'sliceV', 'slideH', 'slideV', 'scale', 'blockScale', 'kaleidoscope', 'fan', 'blindH', 'blindV')
+        customTransitions     : [],		
+        fallback3d            : 'sliceV', // String (default 'sliceV'): Fallback for browsers that support transitions, but not 3d transforms (only used if primary transition makes use of 3d-transforms)
 		controls              : 'thumbs', // String (default 'thumbs'): Navigation type ('thumbs', 'arrows', null)
 		thumbMargin           : 3,        // Int (default 3): Percentage width of thumb margin
 		autoPlay              : false,    // Int (default false): Auto-cycle slider
@@ -56,6 +57,9 @@
             // User-defined function to fire on slider initialisation
             this.settings['onInit']();
 
+            // Set animation index for custom animation
+            if(this.settings.transition === "custom") this.nextAnimIndex = -1;
+            
             // Setup captions
             this.captions();
 
@@ -155,6 +159,7 @@
         }
 
         ,next: function () {
+            if(this.settings.transition === "custom") this.nextAnimIndex++;
             // If on final slide, loop back to first slide
             if (this.currentPlace === this.totalSlides - 1) {
                 this.transition(0, true); // Call transition
@@ -164,6 +169,7 @@
         }
 
         ,prev: function () {
+            if(this.settings.transition === "custom") this.nextAnimIndex--;
             // If on first slide, loop round to final slide
             if (this.currentPlace == 0) {
                 this.transition(this.totalSlides - 1, false); // Call transition
@@ -283,7 +289,13 @@
 		this.RS.inProgress = true; // Set RS inProgress flag to prevent additional Transition objects being instantiated until transition end
 		this.forward = forward; // Bool: true for forward, false for backward
 		this.transition = transition; // String: name of transition requested
-		this.fallback3d = this.RS.settings['fallback3d']; // String: fallback to use when 3D transforms aren't supported
+        
+        if(this.transition === "custom") this.customAnims = this.RS.settings.customTransitions, this.isCustomTransition = true;
+
+        // Remove incorrect specified elements from customAnims array.
+        if(this.transition === "custom") var that = this; $.each(this.customAnims, function(i, obj) { if($.inArray(obj, that.anims) === -1) that.customAnims.splice(i, 1); } )
+		
+        this.fallback3d = this.RS.settings['fallback3d']; // String: fallback to use when 3D transforms aren't supported
 
 		this.init(); // Call Transition initialisation method
 	}
@@ -295,6 +307,8 @@
 
         // Array of possible animations
         ,anims: ['cubeH', 'cubeV', 'fade', 'sliceH', 'sliceV', 'slideH', 'slideV', 'scale', 'blockScale', 'kaleidoscope', 'fan', 'blindH', 'blindV']
+
+        ,customAnims: []
 
         ,init: function () {
             // Call requested transition method
@@ -652,6 +666,14 @@
         ,random: function () {
             // Pick a random transition from the anims array (obj prop)
             this[this.anims[Math.floor(Math.random() * this.anims.length)]]();
+        }
+
+        ,custom: function() {
+            var animIndex = this.RS.nextAnimIndex;
+            if(animIndex < 0) animIndex = 0;
+            if(animIndex > 0) animIndex = animIndex % this.customAnims.length;
+            // Pick the next item in the list of transitions provided by user.
+            this[this.customAnims[animIndex]]();
         }
     };
 
