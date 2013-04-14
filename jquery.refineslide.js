@@ -651,16 +651,15 @@
         }
 
         ,custom: function() {
-            var animIndex = this.RS.nextAnimIndex;
-
-            if (animIndex < 0) {
-                animIndex = 0;
-            } else if (animIndex > 0) {
-                animIndex = animIndex % this.customAnims.length;
+            if (this.RS.nextAnimIndex < 0) {
+                this.RS.nextAnimIndex = this.customAnims.length - 1;
+            }
+            if (this.RS.nextAnimIndex === this.customAnims.length) {
+                this.RS.nextAnimIndex = 0;
             }
 
-            // Pick the next item in the list of transitions provided by user
-            this[this.customAnims[animIndex]]();
+            // Pick the next item in the list of transitions provided by user.
+            this[this.customAnims[this.RS.nextAnimIndex]]();
         }
     };
 
