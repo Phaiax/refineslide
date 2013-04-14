@@ -331,7 +331,7 @@
 
                 setTimeout(function () {
                     callback(transition);
-                }, 0);
+                }, 20);
             } else {
                 // Transition execution
                 this.execute();
