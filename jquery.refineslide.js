@@ -12,8 +12,9 @@
 	// Baked-in settings for extension
 	var defaults = {
         maxWidth              : 800,      // Max slider width - should be set to image width
-		transition            : 'cubeV',  // String (default 'cubeV'): Transition type ('random', 'cubeH', 'cubeV', 'fade', 'sliceH', 'sliceV', 'slideH', 'slideV', 'scale', 'blockScale', 'kaleidoscope', 'fan', 'blindH', 'blindV')
-		fallback3d            : 'sliceV', // String (default 'sliceV'): Fallback for browsers that support transitions, but not 3d transforms (only used if primary transition makes use of 3d-transforms)
+        transition            : 'cubeV',  // String (default 'cubeV'): Transition type ('custom', random', 'cubeH', 'cubeV', 'fade', 'sliceH', 'sliceV', 'slideH', 'slideV', 'scale', 'blockScale', 'kaleidoscope', 'fan', 'blindH', 'blindV')
+        customTransitions     : [],
+        fallback3d            : 'sliceV', // String (default 'sliceV'): Fallback for browsers that support transitions, but not 3d transforms (only used if primary transition makes use of 3d-transforms)
         perspective           : 1000,     // Perspective (used for 3d transforms)
 		useThumbs             : true,     // Bool (default true): Navigation type thumbnails
 		useArrows             : false,    // Bool (default false): Navigation type previous and next arrows
@@ -56,7 +57,12 @@
             // User-defined function to fire on slider initialisation
             this.settings.onInit();
 
-            this.captions(); // Setup captions
+            // Setup captions
+            this.captions();
+
+            if(this.settings.transition === 'custom') {
+                this.nextAnimIndex = -1; // Set animation index for custom animation
+            }
 
             if (this.settings.useArrows) {
                 this.setArrows(); // Setup arrow navigation
@@ -80,7 +86,7 @@
                             clearTimeout(this.cycling);
                         }
                     }, this),
-                    mouseleave: this.setAutoPlay // Resume slideshow
+                    mouseleave: $.proxy(this.setAutoPlay, this) // Resume slideshow
                 });
             }
 
@@ -102,7 +108,7 @@
         }
 
         ,setArrows:function () {
-            var _this = this;
+            var that = this;
 
             // Append user-defined arrow template (elems) to '.rs-wrap' elem
             this.$sliderWrap.append(this.settings['arrowTemplate']);
@@ -110,17 +116,21 @@
             // Fire next() method when clicked
             $('.rs-next', this.$sliderWrap).on('click', function (e) {
                 e.preventDefault();
-                _this.next();
+                that.next();
             });
 
             // Fire prev() method when clicked
             $('.rs-prev', this.$sliderWrap).on('click', function (e) {
                 e.preventDefault();
-                _this.prev();
+                that.prev();
             });
         }
 
         ,next: function () {
+            if (this.settings.transition === 'custom') {
+                this.nextAnimIndex++;
+            }
+
             // If on final slide, loop back to first slide
             if (this.currentPlace === this.totalSlides - 1) {
                 this.transition(0, true); // Call transition
@@ -130,6 +140,10 @@
         }
 
         ,prev: function () {
+            if (this.settings.transition === 'custom') {
+                this.nextAnimIndex--;
+            }
+
             // If on first slide, loop round to final slide
             if (this.currentPlace == 0) {
                 this.transition(this.totalSlides - 1, false); // Call transition
@@ -139,29 +153,29 @@
         }
 
         ,setKeys: function () {
-            var _this = this;
+            var that = this;
 
             // Bind keyboard left/right arrows to next/prev methods
             $(document).on('keydown', function (e) {
                 if (e.keyCode === 39) { // Right arrow key
-                    _this.next();
+                    that.next();
                 } else if (e.keyCode === 37) { // Left arrow key
-                    _this.prev();
+                    that.prev();
                 }
             });
         }
 
         ,setAutoPlay: function () {
-            var _this = this;
+            var that = this;
 
             // Set timeout to object property so it can be accessed/cleared externally
             this.cycling = setTimeout(function () {
-                _this.next();
+                that.next();
             }, this.settings['delay']);
         }
 
         ,setThumbs: function () {
-            var _this = this,
+            var that = this,
                 // Set percentage width (minus user-defined margin) to span width of slider
                 width = (100 - ((this.totalSlides - 1) * this.settings['thumbMargin'])) / this.totalSlides + '%';
 
@@ -196,17 +210,17 @@
             this.$thumbWrap.on('click', 'a', function (e) {
                 e.preventDefault();
 
-                _this.transition(parseInt($(this).data('rs-num'))); // Call transition using identifier from thumb class
+                that.transition(parseInt($(this).data('rs-num'))); // Call transition using identifier from thumb class
             });
         }
 
         ,captions: function() {
-            var _this = this,
+            var that = this,
                 $captions = this.$slides.find('.rs-caption');
 
             // User-defined caption width
             $captions.css({
-                width: _this.settings['captionWidth'] + '%',
+                width: that.settings['captionWidth'] + '%',
                 opacity: 0
             });
 
@@ -215,7 +229,7 @@
 
             $captions.each(function() {
                 $(this).css({
-                    transition: 'opacity ' + _this.settings['transitionDuration'] + 'ms linear',
+                    transition: 'opacity ' + that.settings['transitionDuration'] + 'ms linear',
                     backfaceVisibility: 'hidden'
                 });
             });
@@ -259,7 +273,23 @@
 		this.RS.inProgress = true; // Set RS inProgress flag to prevent additional Transition objects being instantiated until transition end
 		this.forward = forward; // Bool: true for forward, false for backward
 		this.transition = transition; // String: name of transition requested
-		this.fallback3d = this.RS.settings['fallback3d']; // String: fallback to use when 3D transforms aren't supported
+
+        if (this.transition === 'custom') {
+            this.customAnims = this.RS.settings.customTransitions;
+            this.isCustomTransition = true;
+        }
+
+        // Remove incorrect specified elements from customAnims array.
+        if (this.transition === 'custom') {
+            var that = this;
+            $.each(this.customAnims, function (i, obj) {
+                if ($.inArray(obj, that.anims) === -1) {
+                    that.customAnims.splice(i, 1);
+                }
+            });
+        }
+
+        this.fallback3d = this.RS.settings['fallback3d']; // String: fallback to use when 3D transforms aren't supported
 
 		this.init(); // Call Transition initialisation method
 	}
@@ -272,13 +302,15 @@
         // Array of possible animations
         ,anims: ['cubeH', 'cubeV', 'fade', 'sliceH', 'sliceV', 'slideH', 'slideV', 'scale', 'blockScale', 'kaleidoscope', 'fan', 'blindH', 'blindV']
 
+        ,customAnims: []
+
         ,init: function () {
             // Call requested transition method
             this[this.transition]();
         }
 
         ,before: function (callback) {
-            var _this = this;
+            var that = this;
 
             // Prepare slide opacity & z-index
             this.RS.$currentSlide.css('z-index', 2);
@@ -289,8 +321,8 @@
                 this.RS.$currentSlide.find('.rs-caption').css('opacity', 0);
                 this.RS.$nextSlide.find('.rs-caption').css('opacity', 1);
             } else {
-                this.RS.$currentSlide.find('.rs-caption').animate({'opacity' : 0}, _this.RS.settings['transitionDuration']);
-                this.RS.$nextSlide.find('.rs-caption').animate({'opacity' : 1}, _this.RS.settings['transitionDuration']);
+                this.RS.$currentSlide.find('.rs-caption').animate({'opacity' : 0}, that.RS.settings['transitionDuration']);
+                this.RS.$nextSlide.find('.rs-caption').animate({'opacity' : 1}, that.RS.settings['transitionDuration']);
             }
 
             // Check if transition describes a setup method
@@ -308,10 +340,7 @@
 
             // Listen for CSS transition end on elem (set by transition)
             if (this.RS.cssTransitions) {
-                $(this.listenTo).one('webkitTransitionEnd transitionend oTransitionEnd mstransitionend', function () {
-                    // Post-transition reset
-                    _this.after();
-                });
+                $(this.listenTo).one('webkitTransitionEnd transitionend oTransitionEnd mstransitionend', $.proxy(this.after, this));
             }
         }
 
@@ -352,28 +381,28 @@
         }
 
         ,fade: function () {
-            var _this = this;
+            var that = this;
 
             // If CSS transitions are supported by browser
             if (this.RS.cssTransitions) {
                 // Setup steps
                 this.setup = function () {
                     // Set event listener to next slide elem
-                    _this.listenTo = _this.RS.$currentSlide;
+                    that.listenTo = that.RS.$currentSlide;
 
-                    _this.RS.$currentSlide.css('transition', 'opacity ' + _this.RS.settings['transitionDuration'] + 'ms linear');
+                    that.RS.$currentSlide.css('transition', 'opacity ' + that.RS.settings['transitionDuration'] + 'ms linear');
                 };
 
                 // Execution steps
                 this.execute = function () {
                     // Display next slide over current slide
-                    _this.RS.$currentSlide.css('opacity', 0);
+                    that.RS.$currentSlide.css('opacity', 0);
                 }
             } else { // JS animation fallback
                 this.execute = function () {
-                    _this.RS.$currentSlide.animate({'opacity' : 0}, _this.RS.settings['transitionDuration'], function () {
+                    that.RS.$currentSlide.animate({'opacity' : 0}, that.RS.settings['transitionDuration'], function () {
                         // Reset steps
-                        _this.after();
+                        that.after();
                     });
                 }
             }
@@ -388,30 +417,30 @@
                 return this[this['fallback3d']](); // User-defined transition
             }
 
-            var _this = this;
+            var that = this;
 
             // Setup steps
             this.setup = function () {
                 // Set event listener to '.rs-slider' <ul>
-                _this.listenTo = _this.RS.$slider;
+                that.listenTo = that.RS.$slider;
 
                 this.RS.$sliderBG.css('perspective', 1000);
 
                 // props for slide <li>s
-                _this.RS.$currentSlide.css({
+                that.RS.$currentSlide.css({
                     transform : 'translateZ(' + tz + 'px)',
                     backfaceVisibility : 'hidden'
                 });
 
                 // props for next slide <li>
-                _this.RS.$nextSlide.css({
+                that.RS.$nextSlide.css({
                     opacity : 1,
                     backfaceVisibility : 'hidden',
                     transform : 'translateY(' + nty + 'px) translateX(' + ntx + 'px) rotateY('+ nry +'deg) rotateX('+ nrx +'deg)'
                 });
 
                 // props for slider <ul>
-                _this.RS.$slider.css({
+                that.RS.$slider.css({
                     transform: 'translateZ(-' + tz + 'px)',
                     transformStyle: 'preserve-3d'
                 });
@@ -419,8 +448,8 @@
 
             // Execution steps
             this.execute = function () {
-                _this.RS.$slider.css({
-                    transition: 'all ' + _this.RS.settings['transitionDuration'] + 'ms ease-in-out',
+                that.RS.$slider.css({
+                    transition: 'all ' + that.RS.settings['transitionDuration'] + 'ms ease-in-out',
                     transform: 'translateZ(-' + tz + 'px) rotateX('+ wrx +'deg) rotateY('+ wry +'deg)'
                 });
             };
@@ -460,12 +489,12 @@
                 return this[this['fallback']]();
             }
 
-            var _this = this;
+            var that = this;
 
             // Setup steps
             this.setup = function () {
                 // The time (in ms) added to/subtracted from the delay total for each new gridlet
-                var count = (_this.RS.settings['transitionDuration']) / (cols + rows);
+                var count = (that.RS.settings['transitionDuration']) / (cols + rows);
 
                 // Gridlet creator (divisions of the image grid, positioned with background-images to replicate the look of an entire slide image when assembled)
                 function gridlet(width, height, top, left, src, imgWidth, imgHeight, c, r) {
@@ -480,24 +509,24 @@
                         backgroundImage : 'url(' + src + ')',
                         backgroundPosition : '-' + left + 'px -' + top + 'px',
                         backgroundSize : imgWidth + 'px ' + imgHeight + 'px',
-                        transition : 'all ' + _this.RS.settings['transitionDuration'] + 'ms ease-in-out ' + delay + 'ms',
+                        transition : 'all ' + that.RS.settings['transitionDuration'] + 'ms ease-in-out ' + delay + 'ms',
                         transform : 'none'
                     });
                 }
 
                 // Get the next slide's image
-                _this.$img = _this.RS.$currentSlide.find('img.rs-slide-image');
+                that.$img = that.RS.$currentSlide.find('img.rs-slide-image');
 
                 // Create a grid to hold the gridlets
-                _this.$grid = $('<div />').addClass('rs-grid');
+                that.$grid = $('<div />').addClass('rs-grid');
 
                 // Prepend the grid to the next slide (i.e. so it's above the slide image)
-                _this.RS.$currentSlide.prepend(_this.$grid);
+                that.RS.$currentSlide.prepend(that.$grid);
 
                 // vars to calculate positioning/size of gridlets
-                var imgWidth = _this.$img.width(),
-                    imgHeight = _this.$img.height(),
-                    imgSrc = _this.$img.attr('src'),
+                var imgWidth = that.$img.width(),
+                    imgHeight = that.$img.height(),
+                    imgSrc = that.$img.attr('src'),
                     colWidth = Math.floor(imgWidth / cols),
                     rowHeight = Math.floor(imgHeight / rows),
                     colRemainder = imgWidth - (cols * colWidth),
@@ -537,7 +566,7 @@
                         }
 
                         // Create & append gridlet to grid
-                        _this.$grid.append(gridlet(newColWidth, newRowHeight, topDist, leftDist, imgSrc, imgWidth, imgHeight, i, j));
+                        that.$grid.append(gridlet(newColWidth, newRowHeight, topDist, leftDist, imgSrc, imgWidth, imgHeight, i, j));
 
                         topDist += newRowHeight;
                     }
@@ -546,22 +575,22 @@
                 }
 
                 // Set event listener on last gridlet to finish transitioning
-                _this.listenTo = _this.$grid.children().last();
+                that.listenTo = that.$grid.children().last();
 
                 // Show grid & hide the image it replaces
-                _this.$grid.show();
-                _this.$img.css('opacity', 0);
+                that.$grid.show();
+                that.$img.css('opacity', 0);
 
                 // Add identifying classes to corner gridlets (useful if applying border radius)
-                _this.$grid.children().first().addClass('rs-top-left');
-                _this.$grid.children().last().addClass('rs-bottom-right');
-                _this.$grid.children().eq(rows - 1).addClass('rs-bottom-left');
-                _this.$grid.children().eq(- rows).addClass('rs-top-right');
+                that.$grid.children().first().addClass('rs-top-left');
+                that.$grid.children().last().addClass('rs-bottom-right');
+                that.$grid.children().eq(rows - 1).addClass('rs-bottom-left');
+                that.$grid.children().eq(- rows).addClass('rs-top-right');
             };
 
             // Execution steps
             this.execute = function () {
-                _this.$grid.children().css({
+                that.$grid.children().css({
                     opacity: op,
                     transform: 'rotate('+ ro +'deg) translateX('+ tx +'px) translateY('+ ty +'px) scale('+ sc +')'
                 });
@@ -571,8 +600,8 @@
 
             // Reset steps
             this.reset = function () {
-                _this.$img.css('opacity', 1);
-                _this.$grid.remove();
+                that.$img.css('opacity', 1);
+                that.$grid.remove();
             }
         }
 
@@ -619,6 +648,19 @@
         ,random: function () {
             // Pick a random transition from the anims array (obj prop)
             this[this.anims[Math.floor(Math.random() * this.anims.length)]]();
+        }
+
+        ,custom: function() {
+            var animIndex = this.RS.nextAnimIndex;
+
+            if (animIndex < 0) {
+                animIndex = 0;
+            } else if (animIndex > 0) {
+                animIndex = animIndex % this.customAnims.length;
+            }
+
+            // Pick the next item in the list of transitions provided by user
+            this[this.customAnims[animIndex]]();
         }
     };
 
