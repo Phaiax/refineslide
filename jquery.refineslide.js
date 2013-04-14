@@ -687,7 +687,7 @@
 
         ,cssTransitions: function () {
             // Use Modernizr if available & implements csstransitions test
-            if (typeof window.Modernizr && Modernizr.csstransitions !== 'undefined') {
+            if (typeof window.Modernizr !== 'undefined' && Modernizr.csstransitions !== 'undefined') {
                 return Modernizr.csstransitions;
             }
 
@@ -697,7 +697,7 @@
 
         ,cssTransforms3d: function () {
             // Use Modernizr if available & implements csstransforms3d test
-            if (typeof window.Modernizr && Modernizr.csstransforms3d !== 'undefined') {
+            if (typeof window.Modernizr !== 'undefined' && Modernizr.csstransforms3d !== 'undefined') {
                 return Modernizr.csstransforms3d;
             }
 
