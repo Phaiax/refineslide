@@ -2,7 +2,6 @@
  * jQuery RefineSlide plugin v0.4
  * http://github.com/alexdunphy/refineslide
  * Requires: jQuery v1.8+
- * Copyright 2013, Alex Dunphy
  * MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 
@@ -16,19 +15,19 @@
         customTransitions     : [],
         fallback3d            : 'sliceV', // String (default 'sliceV'): Fallback for browsers that support transitions, but not 3d transforms (only used if primary transition makes use of 3d-transforms)
         perspective           : 1000,     // Perspective (used for 3d transforms)
-		useThumbs             : true,     // Bool (default true): Navigation type thumbnails
-		useArrows             : false,    // Bool (default false): Navigation type previous and next arrows
-		thumbMargin           : 3,        // Int (default 3): Percentage width of thumb margin
-		autoPlay              : false,    // Int (default false): Auto-cycle slider
-		delay                 : 5000,     // Int (default 5000) Time between slides in ms
-		transitionDuration    : 800,      // Int (default 800): Transition length in ms
-		startSlide            : 0,        // Int (default 0): First slide
-		keyNav                : true,     // Bool (default true): Use left/right arrow keys to switch slide
-		captionWidth          : 50,       // Int (default 50): Percentage of slide taken by caption
-		arrowTemplate         : '<div class="rs-arrows"><a href="#" class="rs-prev"></a><a href="#" class="rs-next"></a></div>', // String: The markup used for arrow controls (if arrows are used). Must use classes '.rs-next' & '.rs-prev'
-		onInit                : function () {}, // Func: User-defined, fires with slider initialisation
-		onChange              : function () {}, // Func: User-defined, fires with transition start
-		afterChange           : function () {}  // Func: User-defined, fires after transition end
+        useThumbs             : true,     // Bool (default true): Navigation type thumbnails
+        useArrows             : false,    // Bool (default false): Navigation type previous and next arrows
+        thumbMargin           : 3,        // Int (default 3): Percentage width of thumb margin
+        autoPlay              : false,    // Int (default false): Auto-cycle slider
+        delay                 : 5000,     // Int (default 5000) Time between slides in ms
+        transitionDuration    : 800,      // Int (default 800): Transition length in ms
+        startSlide            : 0,        // Int (default 0): First slide
+        keyNav                : true,     // Bool (default true): Use left/right arrow keys to switch slide
+        captionWidth          : 50,       // Int (default 50): Percentage of slide taken by caption
+        arrowTemplate         : '<div class="rs-arrows"><a href="#" class="rs-prev"></a><a href="#" class="rs-next"></a></div>', // String: The markup used for arrow controls (if arrows are used). Must use classes '.rs-next' & '.rs-prev'
+        onInit                : function () {}, // Func: User-defined, fires with slider initialisation
+        onChange              : function () {}, // Func: User-defined, fires with transition start
+        afterChange           : function () {}  // Func: User-defined, fires after transition end
 	};
 
 	// RS (RefineSlide) object constructor
