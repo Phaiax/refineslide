@@ -4,4 +4,4 @@
 # Convert crlf to lf for non-binary files w/out requiring all
 # contributers to have same core.autocrlf setting
 
-# * text=auto
+* text=auto
