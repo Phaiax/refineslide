@@ -613,11 +613,19 @@
         }
 
         ,slideV: function () {
-            this.grid(1, 1, 0, 0, 'auto', 1, 1);
+            var dir = this.forward ?
+                'min-auto' :
+                'auto';
+
+            this.grid(1, 1, 0, 0, dir, 1, 1);
         }
 
         ,slideH: function () {
-            this.grid(1, 1, 0, 'min-auto', 0, 1, 1);
+            var dir = this.forward ?
+                'min-auto' :
+                'auto';
+
+            this.grid(1, 1, 0, dir, 0, 1, 1);
         }
 
         ,scale: function () {
