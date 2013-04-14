@@ -8,6 +8,7 @@ Check out the [project page](http://alexdunphy.github.com/refineslide/) for docu
 Updating from versions <= 0.3
 -----
 * maxWidth param required on instantiation (should be set to native image width)
+* removed prefixing shim - jQuery 1.8+ now required
 
 
 Requirements
