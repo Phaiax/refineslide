@@ -1,5 +1,5 @@
 /*
- * jQuery RefineSlide plugin v0.4
+ * jQuery RefineSlide plugin v0.4.1
  * http://github.com/alexdunphy/refineslide
  * Requires: jQuery v1.8+
  * MIT License (http://www.opensource.org/licenses/mit-license.php)
