@@ -9,34 +9,21 @@
 
 	<title>RefineSlide</title>
 
-	<link rel="stylesheet" href="assets/css/reset.css" />
-	<link rel="stylesheet" href="assets/css/main.css" />
-	<link rel="stylesheet" href="assets/css/refineslide.css" />
-	<link rel="stylesheet" href="assets/css/refineslide-theme-dark.css" />
-
-	<link rel="stylesheet" href="assets/css/shCore.css" />
-	<link rel="stylesheet" href="assets/css/shThemeDefault.css" />
+    <link rel="stylesheet" href="./assets/css/reset.css" />
+    <link rel="stylesheet" href="./assets/css/main.css" />
+    <link rel="stylesheet" href="./assets/css/refineslide.css" />
+    <link rel="stylesheet" href="./assets/css/refineslide-theme-dark.css" />
+    <link rel="stylesheet" href="./assets/css/shCore.css" />
+    <link rel="stylesheet" href="./assets/css/shThemeDefault.css" />
 
     <script src="http://use.typekit.com/tbq4amo.js"></script>
     <script>try{Typekit.load();}catch(e){}</script>
 
-    <script src="assets/js/modernizr.js"></script>
+    <script src="./assets/js/modernizr.min.js"></script>
 
     <!--[if lt IE 9]>
-        <script src="assets/js/respond.min.js"></script>
-	<![endif]-->
-	
-	<script>
-	  var _gaq = _gaq || [];
-	  _gaq.push(['_setAccount', 'UA-18449038-3']);
-	  _gaq.push(['_trackPageview']);
-	
-	  (function() {
-	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-	  })();
-	</script>
+        <script src="./assets/js/respond.min.js"></script>
+    <![endif]-->
 </head>
 <body>
 
@@ -44,7 +31,7 @@
 
 	<div class="wrap group">
         <div class="group">
-        
+
             <h1 class="title"><a href="/refineslide/">RefineSlide</a></h1>
 
             <div id="top-buttons" class="group">
@@ -123,62 +110,51 @@
     </div> <!-- /#upper -->
 
    	<div id="footer" class="wrap group">
-           <small id="copy">&copy; 2012 <a href="https://twitter.com/#!/alexsdunphy">Alex Dunphy</a> 2012</small>
+           <small id="copy">&copy; 2013 <a href="https://twitter.com/#!/alexsdunphy">Alex Dunphy</a> 2012</small>
    	</div>
 
-    <script src="assets/js/jquery.js"></script>
+    <script src="./assets/js/jquery.min.js"></script>
     <!--[if lt IE 8]>
-        <script src="assets/js/hashchange.js"></script>
-	<![endif]-->
-    <script src="assets/js/jquery.refineslide.min.js"></script>
+        <script src="./assets/js/hashchange.min.js"></script>
+    <![endif]-->
+    <script src="./assets/js/jquery.refineslide.min.js"></script>
     <script>
-        $('#images').refineSlide({
-            transition : 'fade',
-            onInit : function () {
-                var slider = this.slider,
-                   $triggers = $('.translist').find('> li > a');
+        $(function () {
+            $('#images').refineSlide({
+                transition : 'fade',
+                onInit : function () {
+                    var slider = this.slider;
+                    var $triggers = $('.translist').find('> li > a');
+                    var $upper = $('#upper');
 
-                $triggers.parent().find('a[href="#_'+ this.slider.settings['transition'] +'"]').addClass('active');
+                    $triggers.parent().find('a[href="#_'+ this.slider.settings['transition'] +'"]').addClass('active');
 
-                $triggers.on('click', function (e) {
-                   e.preventDefault();
+                    $triggers.on('click', function (e) {
+                       e.preventDefault();
 
-                    if (!$(this).find('.unsupported').length) {
-                        $triggers.removeClass('active');
-                        $(this).addClass('active');
-                        slider.settings['transition'] = $(this).attr('href').replace('#_', '');
+                        if (!$(this).find('.unsupported').length) {
+                            $triggers.removeClass('active');
+                            $(this).addClass('active');
+                            slider.settings['transition'] = $(this).attr('href').replace('#_', '');
+                        }
+                    });
+
+                    function support(result, bobble) {
+                        var phrase = '';
+
+                        if (!result) {
+                            phrase = ' not';
+                            $upper.find('div.bobble-'+ bobble).addClass('unsupported');
+                            $upper.find('div.bobble-js.bobble-css.unsupported').removeClass('bobble-css unsupported').text('JS');
+                        }
                     }
-                });
 
-                function support(result, bobble) {
-                    var phrase = '';
-
-                    if (!result) {
-                        phrase = ' not';
-                        $('#upper').find('div.bobble-'+ bobble).addClass('unsupported');
-                        $('#upper').find('div.bobble-js.bobble-css.unsupported').removeClass('bobble-css unsupported').text('JS');
-                    }
-                }
-
-                support(this.slider.cssTransforms3d, '3d');
-                support(this.slider.cssTransitions, 'css');
-            },
-            controls : 'arrows'
+                    support(this.slider.cssTransforms3d, '3d');
+                    support(this.slider.cssTransitions, 'css');
+                },
+                controls : 'arrows'
+            });
         });
-    </script>
-    <script src="assets/js/ios-orientation-change-fix.js"></script>
-    <script>
-      var _gauges = _gauges || [];
-      (function() {
-        var t   = document.createElement('script');
-        t.type  = 'text/javascript';
-        t.async = true;
-        t.id    = 'gauges-tracker';
-        t.setAttribute('data-site-id', '4f232906cb25bc26d1000008');
-        t.src = '//secure.gaug.es/track.js';
-        var s = document.getElementsByTagName('script')[0];
-        s.parentNode.insertBefore(t, s);
-      })();
     </script>
 </body>
 </html>
