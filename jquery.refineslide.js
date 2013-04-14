@@ -1,21 +1,20 @@
 /*
- * jQuery RefineSlide plugin v0.3
+ * jQuery RefineSlide plugin v0.4
  * http://github.com/alexdunphy/refineslide
- * Requires: jQuery v1.7+
- * Copyright 2012, Alex Dunphy
+ * Requires: jQuery v1.8+
+ * Copyright 2013, Alex Dunphy
  * MIT License (http://www.opensource.org/licenses/mit-license.php)
- *
- * Includes: jQuery imagesLoaded plugin v2.0.1
- * http://github.com/desandro/imagesloaded
- * MIT License. by Paul Irish et al.
  */
 
-;(function ($, window, document, undefined) {
+;(function ($, window, document) {
+    'use strict';
 
 	// Baked-in settings for extension
 	var defaults = {
+        maxWidth              : 800,      // Max slider width - should be set to image width
 		transition            : 'cubeV',  // String (default 'cubeV'): Transition type ('random', 'cubeH', 'cubeV', 'fade', 'sliceH', 'sliceV', 'slideH', 'slideV', 'scale', 'blockScale', 'kaleidoscope', 'fan', 'blindH', 'blindV')
 		fallback3d            : 'sliceV', // String (default 'sliceV'): Fallback for browsers that support transitions, but not 3d transforms (only used if primary transition makes use of 3d-transforms)
+        perspective           : 1000,     // Perspective (used for 3d transforms)
 		useThumbs             : true,     // Bool (default true): Navigation type thumbnails
 		useArrows             : false,    // Bool (default false): Navigation type previous and next arrows
 		thumbMargin           : 3,        // Int (default 3): Percentage width of thumb margin
@@ -40,100 +39,66 @@
 		this.cssTransitions     = testBrowser.cssTransitions();        // Bool: Test for CSS transition support
 		this.cssTransforms3d    = testBrowser.cssTransforms3d();       // Bool: Test for 3D transform support
 		this.currentPlace       = this.settings['startSlide'];         // Int: Index of current slide (starts at 0)
-		this.$currentSlide      = $(this.$slides[this.currentPlace]);  // Elem: Starting slide
+		this.$currentSlide      = this.$slides.eq(this.currentPlace);  // Elem: Starting slide
 		this.inProgress         = false;                               // Bool: Prevents overlapping transitions
 		this.$sliderWrap        = this.$slider.wrap('<div class="rs-wrap" />').parent();      // Elem: Slider wrapper div
 		this.$sliderBG          = this.$slider.wrap('<div class="rs-slide-bg" />').parent();  // Elem: Slider background (useful for styling & essential for cube transitions)
 		this.settings['slider'] = this;  // Make slider object accessible to client call code with 'this.slider' (there's probably a better way to do this)
 
-		this.init();  // Call RS initialisation method
+		this.init();
 	}
 
-	// RS object Prototype
 	RS.prototype = {
+        cycling: null,
+        $slideImages: null,
+
         init: function () {
-            var _this = this;
-
             // User-defined function to fire on slider initialisation
-            this.settings['onInit']();
+            this.settings.onInit();
 
-            // Setup captions
-            this.captions();
+            this.captions(); // Setup captions
 
-            // Setup arrow navigation
-            if (this.settings['useArrows']) this.setArrows();
-
-            // Setup keyboard navigation
-            if (this.settings['keyNav']) this.setKeys();
-
-            // Add slide identifying classes
-            for (var i = 0; i < this.totalSlides; i++) {
-                $(this.$slides[i]).addClass('rs-slide-' + i);
+            if (this.settings.useArrows) {
+                this.setArrows(); // Setup arrow navigation
             }
 
-            // Setup slideshow
-            if (this.settings['autoPlay']) {
+            if (this.settings.keyNav) {
+                this.setKeys(); // Setup keyboard navigation
+            }
+
+            for (var i = 0; i < this.totalSlides; i++) { // Add slide identifying classes
+                this.$slides.eq(i).addClass('rs-slide-' + i);
+            }
+
+            if (this.settings.autoPlay) {
                 this.setAutoPlay();
 
                 // Listen for slider mouseover
-                this.$slider.on('mouseenter', function () {
-                    clearTimeout(_this.cycling); // Pause if hovered
-                });
-
-                // Listen for slider mouseout
-                this.$slider.on('mouseleave', function () {
-                    _this.setAutoPlay(); // Resume slideshow
+                this.$slider.on({
+                    mouseenter: $.proxy(function () {
+                        if (this.cycling !== null) {
+                            clearTimeout(this.cycling);
+                        }
+                    }, this),
+                    mouseleave: this.setAutoPlay // Resume slideshow
                 });
             }
 
             // Get the first image in each slide <li>
-            var images = $(this.$slides).find('img:eq(0)').addClass('rs-slide-image'),
-                clones = [];
+            this.$slideImages = this.$slides.find('img:eq(0)').addClass('rs-slide-image');
 
-            // Fires once all images have been loaded
-            $(images).imagesLoaded(function () {
-
-                // Loop through images & append clones to slider (for dimension testing and thumbnails)
-                for (var i = 0; i < _this.totalSlides; i++) {
-                    clones.push($(images[i]).clone().css({'position':'absolute', 'visibility':'hidden', 'display':'block'}).appendTo(_this.$slider));
-                }
-                setTimeout(function () {
-                    _this.setup(clones);
-                }, 0); // Webkit requires this instant timeout to avoid premature rendering
-            });
+            this.setup();
         }
 
-        ,setup: function (clones) {
-            var _this = this,
-                // Get padding of '.rs-slide-bg' elem
-                padding =   parseInt(this.$sliderBG.css('padding-left').replace('px', ''))
-                            + parseInt(this.$sliderBG.css('padding-right').replace('px', '')),
-                widths = [];
+        ,setup: function () {
+            this.$sliderWrap.css('width', this.settings['maxWidth']);
 
-            // Loop through image clones & create array of widths
-            var i = clones.length;
-            while (i--) {
-                widths.push($(clones[i]).width());
-
-                // If not needed for thumbnails, remove image clones from the DOM
-                if (!_this.settings['useThumbs']) {
-                    $(clones[i]).remove();
-                }
-            }
-
-            // Apply width to '.rs-wrap' elem (width of slimmest slide image + container padding)
-            this.$sliderWrap.css('width', Math.floor.apply(Math, widths) + padding);
-
-            // Use the clones generated in this.init() to make thumbnails
             if (this.settings['useThumbs']) {
-                this.setThumbs(clones);
+                this.setThumbs();
             }
 
             // Display first slide
             this.$currentSlide.css({'opacity' : 1, 'z-index' : 2});
-
-            // Trigger hardware acceleration (if supported)
-            this.$sliderBG.prefixes({'transform' : 'translateZ(0)'});
         }
 
         ,setArrows:function () {
@@ -195,35 +160,43 @@
             }, this.settings['delay']);
         }
 
-        ,setThumbs: function (clones) {
+        ,setThumbs: function () {
             var _this = this,
                 // Set percentage width (minus user-defined margin) to span width of slider
                 width = (100 - ((this.totalSlides - 1) * this.settings['thumbMargin'])) / this.totalSlides + '%';
 
-            // <div> wrapper to contain thumbnails
+            //<Wrapper to contain thumbnails
             this.$thumbWrap = $('<div class="rs-thumb-wrap" />').appendTo(this.$sliderWrap);
 
             // Loop to apply thumbnail widths/margins to <a> wraps, appending an image clone to each
             for (var i = 0; i < this.totalSlides; i++) {
-                var $thumb = $('<a class="rs-slide-link-'+ i +'" />').css({'width' : width, 'marginLeft' : this.settings['thumbMargin'] + '%'}).attr({'href' : '#'});
-                $(clones[i]).removeAttr('style').appendTo(this.$thumbWrap).wrap($thumb);
+                var $thumb = $('<a />')
+                    .css({
+                        width : width,
+                        marginLeft : this.settings['thumbMargin'] + '%'
+                    })
+                    .attr('href', '#')
+                    .data('rs-num', i);
+
+                this.$slideImages.eq(i).clone()
+                    .removeAttr('style')
+                    .appendTo(this.$thumbWrap)
+                    .wrap($thumb);
             }
+
+            this.$thumbWrapLinks = this.$thumbWrap.find('a');
 
             // Safety margin to stop IE7 wrapping the thumbnails (no visual effect in other browsers)
             this.$thumbWrap.children().last().css('margin-right', -10);
 
             // Add active class to starting slide's respective thumb
-            $(this.$thumbWrap.find('a')[this.settings['startSlide']]).addClass('active');
+            this.$thumbWrapLinks.eq(this.settings['startSlide']).addClass('active');
 
             // Listen for click events on thumnails
             this.$thumbWrap.on('click', 'a', function (e) {
                 e.preventDefault();
 
-                // Get identifier from thumb class
-                var cl = parseInt($(this).attr('class').split('-')[3]);
-
-                // Call transition
-                _this.transition(cl);
+                _this.transition(parseInt($(this).data('rs-num'))); // Call transition using identifier from thumb class
             });
         }
 
@@ -232,16 +205,18 @@
                 $captions = this.$slides.find('.rs-caption');
 
             // User-defined caption width
-            $captions.css({'width' : _this.settings['captionWidth'] + '%', 'opacity' : 0});
+            $captions.css({
+                width: _this.settings['captionWidth'] + '%',
+                opacity: 0
+            });
 
             // Display starting slide's caption
-            this.$currentSlide.find('.rs-caption').css({'opacity' : 1});
+            this.$currentSlide.find('.rs-caption').css('opacity', 1);
 
-            // Add CSS3 transition vendor prefixes
             $captions.each(function() {
-                $(this).prefixes({
-                    'transition':'opacity ' + _this.settings['transitionDuration'] + 'ms ease-in-out',
-                    'transform' : 'translateZ(0)' // Necessary for some reason to stop caption opacity jumping when translateZ is also applied to '.rs-slide-bg' (RS.$sliderBG)
+                $(this).css({
+                    transition: 'opacity ' + _this.settings['transitionDuration'] + 'ms linear',
+                    backfaceVisibility: 'hidden'
                 });
             });
         }
@@ -252,12 +227,18 @@
                 // If not already on requested slide
                 if (slideNum !== this.currentPlace) {
                     // Check whether the requested slide index is ahead or behind in the array (if not passed in as param)
-                    if(forward === undefined) {
+                    if (typeof forward !== 'undefined') {
                     	forward = slideNum > this.currentPlace ? true : false;
                     }
 
+                    // If thumbnails exist, revise active class states
+                    if (this.settings['useThumbs']) {
+                        this.$thumbWrapLinks.eq(this.currentPlace).removeClass('active');
+                        this.$thumbWrapLinks.eq(slideNum).addClass('active');
+                    }
+
                     // Assign next slide prop (elem)
-                    this.$nextSlide = $(this.$slides[slideNum]);
+                    this.$nextSlide = this.$slides.eq(slideNum);
 
                     // Assign next slide index prop (int)
                     this.currentPlace = slideNum;
@@ -267,12 +248,6 @@
 
                     // Instantiate new Transition object, passing in self (RS obj), transition type (string), direction (bool)
                     new Transition(this, this.settings['transition'], forward);
-
-                    // If thumbnails exist, revise active class states
-                    if (this.settings['useThumbs']) {
-                        this.$thumbWrap.find('a').removeClass('active');
-                        $(this.$thumbWrap.find('a')[slideNum]).addClass('active');
-                    }
                 }
             }
         }
@@ -305,10 +280,6 @@
         ,before: function (callback) {
             var _this = this;
 
-            // Store current slide attributes for reapplication after transition
-            var currentSlideAttributes = this.RS.$currentSlide.attr('style');
-            var nextSlideAttributes = this.RS.$nextSlide.attr('style');
-
             // Prepare slide opacity & z-index
             this.RS.$currentSlide.css('z-index', 2);
             this.RS.$nextSlide.css({'opacity' : 1, 'z-index' : 1});
@@ -326,9 +297,10 @@
             if (typeof this.setup === 'function') {
                 // Setup required by transition
                 var transition = this.setup();
+
                 setTimeout(function () {
                     callback(transition);
-                }, 40);
+                }, 0);
             } else {
                 // Transition execution
                 this.execute();
@@ -336,23 +308,32 @@
 
             // Listen for CSS transition end on elem (set by transition)
             if (this.RS.cssTransitions) {
-                $(this.listenTo).one('webkitTransitionEnd transitionend oTransitionEnd msTransitionend MSTransitionEnd', function () {
+                $(this.listenTo).one('webkitTransitionEnd transitionend oTransitionEnd mstransitionend', function () {
                     // Post-transition reset
-                    _this.after(currentSlideAttributes, nextSlideAttributes);
+                    _this.after();
                 });
             }
         }
 
-        ,after: function (currentSlideAttributes, nextSlideAttributes) {
+        ,after: function () {
             // Reset transition CSS
+            this.RS.$sliderBG.removeAttr('style');
             this.RS.$slider.removeAttr('style');
-            this.RS.$currentSlide.attr('style', currentSlideAttributes);
-            this.RS.$nextSlide.attr('style', nextSlideAttributes);
-            this.RS.$currentSlide.css({'z-index': '', 'opacity': 0});
-            this.RS.$nextSlide.css({'z-index': 2, 'opacity' : 1});
+            this.RS.$currentSlide.removeAttr('style');
+            this.RS.$nextSlide.removeAttr('style');
+            this.RS.$currentSlide.css({
+                zIndex: 1,
+                opacity: 0
+            });
+            this.RS.$nextSlide.css({
+                zIndex: 2,
+                opacity : 1
+            });
 
             // Additional reset steps required by transition (if any exist)
-            if (typeof this.reset === 'function') this.reset();
+            if (typeof this.reset === 'function') {
+                this.reset();
+            }
 
             // If slideshow is active, reset the timeout
             if (this.RS.settings['autoPlay']) {
@@ -373,43 +354,35 @@
         ,fade: function () {
             var _this = this;
 
-            // Store current slide attributes for reapplication after transition
-            var currentSlideAttributes = this.RS.$currentSlide.attr('style');
-            var nextSlideAttributes = this.RS.$nextSlide.attr('style');
-
             // If CSS transitions are supported by browser
             if (this.RS.cssTransitions) {
                 // Setup steps
                 this.setup = function () {
                     // Set event listener to next slide elem
                     _this.listenTo = _this.RS.$currentSlide;
-                    // Add CSS3 transition vendor prefixes
-                    _this.RS.$currentSlide.prefixes({'transition' : 'opacity ' + _this.RS.settings['transitionDuration'] + 'ms ease-in-out'});
+
+                    _this.RS.$currentSlide.css('transition', 'opacity ' + _this.RS.settings['transitionDuration'] + 'ms linear');
                 };
 
                 // Execution steps
                 this.execute = function () {
                     // Display next slide over current slide
-                    _this.RS.$currentSlide.css({'opacity' : 0});
+                    _this.RS.$currentSlide.css('opacity', 0);
                 }
             } else { // JS animation fallback
                 this.execute = function () {
                     _this.RS.$currentSlide.animate({'opacity' : 0}, _this.RS.settings['transitionDuration'], function () {
                         // Reset steps
-                        _this.after(currentSlideAttributes, nextSlideAttributes);
+                        _this.after();
                     });
                 }
             }
 
-            this.before(function () {
-                // Fire on setup callback
-                _this.execute();
-            });
+            this.before($.proxy(this.execute, this));
         }
 
         // cube() method is used by cubeH() & cubeV() - not for calling directly
         ,cube: function (tz, ntx, nty, nrx, nry, wrx, wry) { // Args: translateZ, (next slide) translateX, (next slide) translateY, (next slide) rotateX, (next slide) rotateY, (wrap) rotateX, (wrap) rotateY
-
             // Fallback if browser does not support 3d transforms/CSS transitions
             if (!this.RS.cssTransitions || !this.RS.cssTransforms3d) {
                 return this[this['fallback3d']](); // User-defined transition
@@ -422,52 +395,37 @@
                 // Set event listener to '.rs-slider' <ul>
                 _this.listenTo = _this.RS.$slider;
 
-                // Set CSS3 perspective vendor prefixes on '.rs-slide-bg' elem
-                // see http://desandro.github.com/3dtransforms/docs/perspective.html
-                this.RS.$sliderBG.prefixes({'perspective' : 1000});
+                this.RS.$sliderBG.css('perspective', 1000);
 
-                var slideProps = {
-                    'transform' : 'translateZ(' + tz + 'px)',
-                    'backface-visibility' : 'hidden'
-                };
-
-                // CSS3 props for slide <li>s
-                _this.RS.$currentSlide.prefixes(slideProps);
-                _this.RS.$nextSlide.prefixes(slideProps);
-
-                // CSS3 props for slider <ul>
-                _this.RS.$slider.prefixes({
-                    'transition' : 'none',
-                    'transform-style' : 'preserve-3d',
-                    'transform' : 'translateZ(-' + tz + 'px)'
+                // props for slide <li>s
+                _this.RS.$currentSlide.css({
+                    transform : 'translateZ(' + tz + 'px)',
+                    backfaceVisibility : 'hidden'
                 });
 
-                // CSS3 prop for next slide <li>
-                _this.RS.$nextSlide.css({'opacity':1}).prefixes({
-                    'transform' : 'translateZ(0px) translateY(' + nty + 'px) translateX(' + ntx + 'px) rotateY('+ nry +'deg) rotateX('+ nrx +'deg)'
+                // props for next slide <li>
+                _this.RS.$nextSlide.css({
+                    opacity : 1,
+                    backfaceVisibility : 'hidden',
+                    transform : 'translateY(' + nty + 'px) translateX(' + ntx + 'px) rotateY('+ nry +'deg) rotateX('+ nrx +'deg)'
+                });
+
+                // props for slider <ul>
+                _this.RS.$slider.css({
+                    transform: 'translateZ(-' + tz + 'px)',
+                    transformStyle: 'preserve-3d'
                 });
             };
 
             // Execution steps
             this.execute = function () {
-                var output = [];
-
-                // Loop through vendor prefixes to make CSS3 transform rules (more involved than just calling prefixes() func in this case as need prefix twice: e.g. '-moz-transition: -moz-transition...')
-                for (var i = 0; i < testBrowser.browserVendors.length; i++) {
-                    output[testBrowser.browserVendors[i] + 'transition'] = testBrowser.browserVendors[i] + 'transform ' + _this.RS.settings['transitionDuration'] + 'ms ease-in-out';
-                }
-
-                // Add CSS3 props to elem
-                _this.RS.$slider.prefixes(output);
-
-                // Additional CSS3 prop
-                _this.RS.$slider.prefixes({'transform' : 'translateZ(-' + tz + 'px) rotateX('+ wrx +'deg) rotateY('+ wry +'deg)'});
+                _this.RS.$slider.css({
+                    transition: 'all ' + _this.RS.settings['transitionDuration'] + 'ms ease-in-out',
+                    transform: 'translateZ(-' + tz + 'px) rotateX('+ wrx +'deg) rotateY('+ wry +'deg)'
+                });
             };
 
-            this.before(function () {
-                // Fire on setup callback
-                _this.execute();
-            });
+            this.before($.proxy(this.execute, this));
         }
 
         ,cubeH: function () {
@@ -497,7 +455,6 @@
         // grid() method is used by many transitions - not for calling directly
         // Grid calculations are based on those in the awesome flux slider (joelambert.co.uk/flux)
         ,grid: function (cols, rows, ro, tx, ty, sc, op) { // Args: columns, rows, rotate, translateX, translateY, scale, opacity
-
             // Fallback if browser does not support CSS transitions
             if (!this.RS.cssTransitions) {
                 return this[this['fallback']]();
@@ -516,16 +473,15 @@
 
                     // Return a gridlet elem with styles for specific transition
                     return $('<div class="rs-gridlet" />').css({
-                        'width' : width,
-                        'height' : height,
-                        'top' : top,
-                        'left' : left,
-                        'background-image' : 'url(' + src + ')',
-                        'background-position' : '-' + left + 'px -' + top + 'px',
-                        'background-size' : imgWidth + 'px ' + imgHeight + 'px'
-                    }).prefixes({
-                        'transition' : 'all ' + _this.RS.settings['transitionDuration'] + 'ms ease-in-out ' + delay + 'ms',
-                        'transform' : 'none'
+                        width : width,
+                        height : height,
+                        top : top,
+                        left : left,
+                        backgroundImage : 'url(' + src + ')',
+                        backgroundPosition : '-' + left + 'px -' + top + 'px',
+                        backgroundSize : imgWidth + 'px ' + imgHeight + 'px',
+                        transition : 'all ' + _this.RS.settings['transitionDuration'] + 'ms ease-in-out ' + delay + 'ms',
+                        transform : 'none'
                     });
                 }
 
@@ -605,13 +561,13 @@
 
             // Execution steps
             this.execute = function () {
-                _this.$grid.children().css('opacity', op).prefixes({'transform' : 'rotate('+ ro +'deg) translateX('+ tx +'px) translateY('+ ty +'px) scale('+ sc +')'});
+                _this.$grid.children().css({
+                    opacity: op,
+                    transform: 'rotate('+ ro +'deg) translateX('+ tx +'px) translateY('+ ty +'px) scale('+ sc +')'
+                });
             };
 
-            this.before(function () {
-                // Fire on setup callback
-                _this.execute();
-            });
+            this.before($.proxy(this.execute, this));
 
             // Reset steps
             this.reset = function () {
@@ -678,8 +634,9 @@
         // Returns true if prop is recognised by browser (else returns false)
         ,testDom: function (prop) {
             var i = this.domPrefixes.length;
+
             while (i--) {
-                if (document.body.style[this.domPrefixes[i] + prop] !== undefined) {
+                if (typeof document.body.style[this.domPrefixes[i] + prop] !== 'undefined') {
                     return true;
                 }
             }
@@ -689,7 +646,7 @@
 
         ,cssTransitions: function () {
             // Use Modernizr if available & implements csstransitions test
-            if (window.Modernizr && Modernizr.csstransitions !== undefined) {
+            if (typeof window.Modernizr && Modernizr.csstransitions !== 'undefined') {
                 return Modernizr.csstransitions;
             }
 
@@ -699,144 +656,18 @@
 
         ,cssTransforms3d: function () {
             // Use Modernizr if available & implements csstransforms3d test
-            if (window.Modernizr && Modernizr.csstransforms3d !== undefined) {
+            if (typeof window.Modernizr && Modernizr.csstransforms3d !== 'undefined') {
                 return Modernizr.csstransforms3d;
             }
 
             // Check for vendor-less prop
-            if (document.body.style['perspectiveProperty'] !== undefined) {
+            if (typeof document.body.style['perspectiveProperty'] !== 'undefined') {
                 return true;
             }
 
             // Use testDom method to check prop (returns bool)
             return this.testDom('Perspective');
         }
-    };
-
-	// CSS vendor prefix generator
-	$.fn['prefixes'] = function (props) {
-        var output = [];
-
-        // Loop through props, add with each vendor prefix to output array
-        for (var prop in props) {
-            if(props.hasOwnProperty(prop)) {
-                var i = testBrowser.browserVendors.length;
-                while (i--) {
-                    output[testBrowser.browserVendors[i] + prop] = props[prop];
-                }
-            }
-        }
-
-        // Add output array of vendor-ised props to elem
-        this.css(output);
-        return this;
-    };
-
-    /*!
-     * David Desandro's imagesloaded plugin is included here as a cross-browser way to ensure all images have loaded before slider setup (e.g. testing for image dimensions)
-     * Another reliable method would be to wait until the window.load event before setup - though that could cause considerable delays on certain pages
-     *
-     * jQuery imagesLoaded plugin v2.0.1
-     * http://github.com/desandro/imagesloaded
-     *
-     * MIT License. by Paul Irish et al.
-     */
-    // blank image data-uri bypasses webkit log warning (thx doug jones)
-    var BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-
-    $.fn.imagesLoaded = function( callback ) {
-        var $this = this,
-            deferred = $.isFunction($.Deferred) ? $.Deferred() : 0,
-            hasNotify = $.isFunction(deferred.notify),
-            $images = $this.find('img').add( $this.filter('img') ),
-            loaded = [],
-            proper = [],
-            broken = [];
-
-        function doneLoading() {
-            var $proper = $(proper),
-                $broken = $(broken);
-
-            if ( deferred ) {
-                if ( broken.length ) {
-                    deferred.reject( $images, $proper, $broken );
-                } else {
-                    deferred.resolve( $images );
-                }
-            }
-
-            if ( $.isFunction( callback ) ) {
-                callback.call( $this, $images, $proper, $broken );
-            }
-        }
-
-        function imgLoaded( img, isBroken ) {
-            // don't proceed if BLANK image, or image is already loaded
-            if ( img.src === BLANK || $.inArray( img, loaded ) !== -1 ) {
-                return;
-            }
-
-            // store element in loaded images array
-            loaded.push( img );
-
-            // keep track of broken and properly loaded images
-            if ( isBroken ) {
-                broken.push( img );
-            } else {
-                proper.push( img );
-            }
-
-            // cache image and its state for future calls
-            $.data( img, 'imagesLoaded', { isBroken: isBroken, src: img.src } );
-
-            // trigger deferred progress method if present
-            if ( hasNotify ) {
-                deferred.notifyWith( $(img), [ isBroken, $images, $(proper), $(broken) ] );
-            }
-
-            // call doneLoading and clean listeners if all images are loaded
-            if ( $images.length === loaded.length ){
-                setTimeout( doneLoading );
-                $images.unbind( '.imagesLoaded' );
-            }
-        }
-
-        // if no images, trigger immediately
-        if ( !$images.length ) {
-            doneLoading();
-        } else {
-            $images.bind( 'load.imagesLoaded error.imagesLoaded', function( event ){
-                // trigger imgLoaded
-                imgLoaded( event.target, event.type === 'error' );
-            }).each( function( i, el ) {
-                    var src = el.src;
-
-                    // find out if this image has been already checked for status
-                    // if it was, and src has not changed, call imgLoaded on it
-                    var cached = $.data( el, 'imagesLoaded' );
-                    if ( cached && cached.src === src ) {
-                        imgLoaded( el, cached.isBroken );
-                        return;
-                    }
-
-                    // if complete is true and browser supports natural sizes, try
-                    // to check for image status manually
-                    if ( el.complete && el.naturalWidth !== undefined ) {
-                        imgLoaded( el, el.naturalWidth === 0 || el.naturalHeight === 0 );
-                        return;
-                    }
-
-                    // cached images don't fire load sometimes, so we reset src, but only when
-                    // dealing with IE, or image is complete (loaded) and failed manual check
-                    // webkit hack from http://groups.google.com/group/jquery-dev/browse_thread/thread/eee6ab7b2da50e1f
-                    if ( el.readyState || el.complete ) {
-                        el.src = BLANK;
-                        el.src = src;
-                    }
-                });
-        }
-
-        return deferred ? deferred.promise( $this ) : $this;
     };
 
 	// jQuery plugin wrapper
@@ -849,4 +680,4 @@
 			}
 		});
 	}
-})(jQuery, window, document);
+})(window.jQuery, window, window.document);

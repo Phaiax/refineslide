@@ -1,11 +1,3 @@
-/* 
- * jQuery RefineSlide plugin v0.3
- * Copyright 2012, Alex Dunphy
- * MIT License (http://www.opensource.org/licenses/mit-license.php)
- *
- * Base styles
- */
-
 .rs-wrap:after,
 .rs-slider:after,
 .rs-thumb-wrap:after,
@@ -68,6 +60,7 @@
         -moz-box-sizing: border-box;
         -webkit-box-sizing: border-box;
         box-sizing: border-box;
+        -webkit-backface-visibility: hidden; /* Hardware accelerate to prevent jumps on transition */
     }
 
         .rs-thumb-wrap > a > img {
@@ -82,10 +75,10 @@
 /* ===[ Arrows ]=== */
 
 .rs-arrows .rs-next,
-.rs-arrows .rs-prev { z-index: 1 }
+.rs-arrows .rs-prev { z-index: 1; }
 
 .rs-arrows:hover .rs-next,
-.rs-arrows:hover .rs-prev { z-index: 2 }
+.rs-arrows:hover .rs-prev { z-index: 2; }
 
 /* ===[ Captions ]=== */
 
@@ -159,6 +152,8 @@
     opacity: 1;
 }
 
-@media screen and (max-width: 480px) { 
-	.rs-caption { opacity: 0!important }
+/* Optional - remove captions at smaller screen widths
+@media screen and (max-width: 480px) {
+	.rs-caption { opacity: 0!important; }
 }
+*/
