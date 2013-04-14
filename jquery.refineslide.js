@@ -6,7 +6,7 @@
  * MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 
-;(function ($, window, document) {
+ ;(function ($, window, document) {
     'use strict';
 
 	// Baked-in settings for extension
@@ -39,12 +39,12 @@
 		this.totalSlides        = this.$slides.length;                 // Int: Number of slides
 		this.cssTransitions     = testBrowser.cssTransitions();        // Bool: Test for CSS transition support
 		this.cssTransforms3d    = testBrowser.cssTransforms3d();       // Bool: Test for 3D transform support
-		this.currentPlace       = this.settings['startSlide'];         // Int: Index of current slide (starts at 0)
+		this.currentPlace       = this.settings.startSlide;         // Int: Index of current slide (starts at 0)
 		this.$currentSlide      = this.$slides.eq(this.currentPlace);  // Elem: Starting slide
 		this.inProgress         = false;                               // Bool: Prevents overlapping transitions
 		this.$sliderWrap        = this.$slider.wrap('<div class="rs-wrap" />').parent();      // Elem: Slider wrapper div
 		this.$sliderBG          = this.$slider.wrap('<div class="rs-slide-bg" />').parent();  // Elem: Slider background (useful for styling & essential for cube transitions)
-		this.settings['slider'] = this;  // Make slider object accessible to client call code with 'this.slider' (there's probably a better way to do this)
+		this.settings.slider = this;  // Make slider object accessible to client call code with 'this.slider' (there's probably a better way to do this)
 
 		this.init();
 	}
@@ -97,9 +97,9 @@
         }
 
         ,setup: function () {
-            this.$sliderWrap.css('width', this.settings['maxWidth']);
+            this.$sliderWrap.css('width', this.settings.maxWidth);
 
-            if (this.settings['useThumbs']) {
+            if (this.settings.useThumbs) {
                 this.setThumbs();
             }
 
@@ -111,7 +111,7 @@
             var that = this;
 
             // Append user-defined arrow template (elems) to '.rs-wrap' elem
-            this.$sliderWrap.append(this.settings['arrowTemplate']);
+            this.$sliderWrap.append(this.settings.arrowTemplate);
 
             // Fire next() method when clicked
             $('.rs-next', this.$sliderWrap).on('click', function (e) {
@@ -171,13 +171,13 @@
             // Set timeout to object property so it can be accessed/cleared externally
             this.cycling = setTimeout(function () {
                 that.next();
-            }, this.settings['delay']);
+            }, this.settings.delay);
         }
 
         ,setThumbs: function () {
             var that = this,
                 // Set percentage width (minus user-defined margin) to span width of slider
-                width = (100 - ((this.totalSlides - 1) * this.settings['thumbMargin'])) / this.totalSlides + '%';
+                width = (100 - ((this.totalSlides - 1) * this.settings.thumbMargin)) / this.totalSlides + '%';
 
             //<Wrapper to contain thumbnails
             this.$thumbWrap = $('<div class="rs-thumb-wrap" />').appendTo(this.$sliderWrap);
@@ -187,7 +187,7 @@
                 var $thumb = $('<a />')
                     .css({
                         width : width,
-                        marginLeft : this.settings['thumbMargin'] + '%'
+                        marginLeft : this.settings.thumbMargin + '%'
                     })
                     .attr('href', '#')
                     .data('rs-num', i);
@@ -204,7 +204,7 @@
             this.$thumbWrap.children().last().css('margin-right', -10);
 
             // Add active class to starting slide's respective thumb
-            this.$thumbWrapLinks.eq(this.settings['startSlide']).addClass('active');
+            this.$thumbWrapLinks.eq(this.settings.startSlide).addClass('active');
 
             // Listen for click events on thumnails
             this.$thumbWrap.on('click', 'a', function (e) {
@@ -220,7 +220,7 @@
 
             // User-defined caption width
             $captions.css({
-                width: that.settings['captionWidth'] + '%',
+                width: that.settings.captionWidth + '%',
                 opacity: 0
             });
 
@@ -229,7 +229,7 @@
 
             $captions.each(function() {
                 $(this).css({
-                    transition: 'opacity ' + that.settings['transitionDuration'] + 'ms linear',
+                    transition: 'opacity ' + that.settings.transitionDuration + 'ms linear',
                     backfaceVisibility: 'hidden'
                 });
             });
@@ -241,12 +241,12 @@
                 // If not already on requested slide
                 if (slideNum !== this.currentPlace) {
                     // Check whether the requested slide index is ahead or behind in the array (if not passed in as param)
-                    if (typeof forward !== 'undefined') {
+                    if (typeof forward === 'undefined') {
                     	forward = slideNum > this.currentPlace ? true : false;
                     }
 
                     // If thumbnails exist, revise active class states
-                    if (this.settings['useThumbs']) {
+                    if (this.settings.useThumbs) {
                         this.$thumbWrapLinks.eq(this.currentPlace).removeClass('active');
                         this.$thumbWrapLinks.eq(slideNum).addClass('active');
                     }
@@ -258,10 +258,10 @@
                     this.currentPlace = slideNum;
 
                     // User-defined function, fires with transition
-                    this.settings['onChange']();
+                    this.settings.onChange();
 
                     // Instantiate new Transition object, passing in self (RS obj), transition type (string), direction (bool)
-                    new Transition(this, this.settings['transition'], forward);
+                    new Transition(this, this.settings.transition, forward);
                 }
             }
         }
@@ -289,7 +289,7 @@
             });
         }
 
-        this.fallback3d = this.RS.settings['fallback3d']; // String: fallback to use when 3D transforms aren't supported
+        this.fallback3d = this.RS.settings.fallback3d; // String: fallback to use when 3D transforms aren't supported
 
 		this.init(); // Call Transition initialisation method
 	}
@@ -321,8 +321,8 @@
                 this.RS.$currentSlide.find('.rs-caption').css('opacity', 0);
                 this.RS.$nextSlide.find('.rs-caption').css('opacity', 1);
             } else {
-                this.RS.$currentSlide.find('.rs-caption').animate({'opacity' : 0}, that.RS.settings['transitionDuration']);
-                this.RS.$nextSlide.find('.rs-caption').animate({'opacity' : 1}, that.RS.settings['transitionDuration']);
+                this.RS.$currentSlide.find('.rs-caption').animate({'opacity' : 0}, that.RS.settings.transitionDuration);
+                this.RS.$nextSlide.find('.rs-caption').animate({'opacity' : 1}, that.RS.settings.transitionDuration);
             }
 
             // Check if transition describes a setup method
@@ -340,7 +340,7 @@
 
             // Listen for CSS transition end on elem (set by transition)
             if (this.RS.cssTransitions) {
-                $(this.listenTo).one('webkitTransitionEnd transitionend oTransitionEnd mstransitionend', $.proxy(this.after, this));
+                $(this.listenTo).one('webkitTransitionEnd transitionend otransitionend oTransitionEnd mstransitionend', $.proxy(this.after, this));
             }
         }
 
@@ -365,7 +365,7 @@
             }
 
             // If slideshow is active, reset the timeout
-            if (this.RS.settings['autoPlay']) {
+            if (this.RS.settings.autoPlay) {
                 clearTimeout(this.RS.cycling);
                 this.RS.setAutoPlay();
             }
@@ -377,7 +377,7 @@
             this.RS.inProgress = false;
 
             // User-defined function, fires after transition has ended
-            this.RS.settings['afterChange']();
+            this.RS.settings.afterChange();
         }
 
         ,fade: function () {
@@ -390,7 +390,7 @@
                     // Set event listener to next slide elem
                     that.listenTo = that.RS.$currentSlide;
 
-                    that.RS.$currentSlide.css('transition', 'opacity ' + that.RS.settings['transitionDuration'] + 'ms linear');
+                    that.RS.$currentSlide.css('transition', 'opacity ' + that.RS.settings.transitionDuration + 'ms linear');
                 };
 
                 // Execution steps
@@ -400,7 +400,7 @@
                 }
             } else { // JS animation fallback
                 this.execute = function () {
-                    that.RS.$currentSlide.animate({'opacity' : 0}, that.RS.settings['transitionDuration'], function () {
+                    that.RS.$currentSlide.animate({'opacity' : 0}, that.RS.settings.transitionDuration, function () {
                         // Reset steps
                         that.after();
                     });
@@ -449,7 +449,7 @@
             // Execution steps
             this.execute = function () {
                 that.RS.$slider.css({
-                    transition: 'all ' + that.RS.settings['transitionDuration'] + 'ms ease-in-out',
+                    transition: 'all ' + that.RS.settings.transitionDuration + 'ms ease-in-out',
                     transform: 'translateZ(-' + tz + 'px) rotateX('+ wrx +'deg) rotateY('+ wry +'deg)'
                 });
             };
@@ -494,7 +494,7 @@
             // Setup steps
             this.setup = function () {
                 // The time (in ms) added to/subtracted from the delay total for each new gridlet
-                var count = (that.RS.settings['transitionDuration']) / (cols + rows);
+                var count = (that.RS.settings.transitionDuration) / (cols + rows);
 
                 // Gridlet creator (divisions of the image grid, positioned with background-images to replicate the look of an entire slide image when assembled)
                 function gridlet(width, height, top, left, src, imgWidth, imgHeight, c, r) {
@@ -509,7 +509,7 @@
                         backgroundImage : 'url(' + src + ')',
                         backgroundPosition : '-' + left + 'px -' + top + 'px',
                         backgroundSize : imgWidth + 'px ' + imgHeight + 'px',
-                        transition : 'all ' + that.RS.settings['transitionDuration'] + 'ms ease-in-out ' + delay + 'ms',
+                        transition : 'all ' + that.RS.settings.transitionDuration + 'ms ease-in-out ' + delay + 'ms',
                         transform : 'none'
                     });
                 }
