@@ -1,12 +1,12 @@
-[jQuery RefineSlide v0.4](http://alexdunphy.github.com/refineslide/)
+[jQuery RefineSlide v0.4](http://alexdunphy.github.io/refineslide/demo.html)
 =======================
 
 RefineSlide is a 3D transform/CSS transition-enabled jQuery plugin for displaying responsive, image-based content.
 
 Links
 -----
-* Check out the [project page](http://alexdunphy.github.com/refineslide/) for documentation & examples
-* View all [available transitions](http://alexdunphy.github.io/refineslide/demo.html)
+* Check out the [project page](http://alexdunphy.github.io/refineslide/demo.html) for documentation & examples
+* Demo all [available transitions](http://alexdunphy.github.io/refineslide/demo.html)
 
 
 Updating from versions <= 0.3
