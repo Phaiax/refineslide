@@ -148,11 +148,13 @@
 
                         <li>
                             <h4>Call slider</h4>
-                            <p>Somewhere suitable in your application (following the inclusion of the refineslide script), call a slider inside a DOM ready function - e.g.:</p>
+                            <p>Somewhere suitable in your application (following the inclusion of the refineslide script), call a slider inside a DOM ready function, making sure to set the maxWidth property to your native slide image width - e.g.:</p>
                             <pre class="brush: js; html-script: true">
 &lt;script&gt;
 	$(function () {
-    	$('.rs-slider').refineSlide();
+    	$('.rs-slider').refineSlide({
+            maxWidth: 850 // set to native image width (px)
+        });
 	});
 &lt;/script&gt;
                             </pre>
@@ -349,7 +351,7 @@ this.slider.transition(slideNum);   // Method: Call a transition (param slideNum
     </div> <!-- /.wrap -->
 
    	<div id="footer" class="wrap group">
-        <small id="copy">&copy; 2013 <a href="https://twitter.com/#!/alexsdunphy">Alex Dunphy</a> 2012</small>
+        <small id="copy">Made by <a href="https://twitter.com/#!/alexsdunphy">Alex Dunphy</a></small>
    	</div>
 
     <script src="./assets/js/jquery.min.js"></script>
