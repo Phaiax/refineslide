@@ -17,6 +17,8 @@
         perspective           : 1000,     // Perspective (used for 3d transforms)
         useThumbs             : true,     // Bool (default true): Navigation type thumbnails
         useArrows             : false,    // Bool (default false): Navigation type previous and next arrows
+        useTouch              : false,	  // Bool (default false): Swipe navigation on touch devices. TouchSwipe plugin must be initialised.
+        swipeDirection        : 'horizontal',  // String (default 'horizontal'): Direction of the swipe ('horizontal', 'vertical')
         thumbMargin           : 3,        // Int (default 3): Percentage width of thumb margin
         autoPlay              : false,    // Int (default false): Auto-cycle slider
         delay                 : 5000,     // Int (default 5000) Time between slides in ms
@@ -65,6 +67,10 @@
 
             if (this.settings.useArrows) {
                 this.setArrows(); // Setup arrow navigation
+            }
+            
+            if (this.settings.useTouch) {
+                this.setTouch(); // Setup touch navigation
             }
 
             if (this.settings.keyNav) {
@@ -124,6 +130,45 @@
                 that.prev();
             });
         }
+        
+        ,setTouch:function () {
+            var that = this;
+            
+            // Check if TouchSwipe is loaded
+            if (typeof $.fn.swipe == 'function') {   
+				// Define minimum swipe distance. Default is 75px, set to 0 for demo so any distance triggers swipe
+				var swipeThreshold = 50;
+	            // Set touch Swipe functions
+	            if ( this.settings.swipeDirection == 'horizontal') {
+		        	this.$sliderWrap.swipe({
+		        		// Horizontal swipe
+						swipeLeft:function() { that.next();	},
+						swipeRight:function() { that.prev(); },
+						threshold: swipeThreshold,
+						// Prevent accidental scrolling when swiping the slider
+						allowPageScroll: 'vertical',
+						// Simulate touch events on unsupported devices
+						fallbackToMouseEvents: true
+					});
+				}
+				else {
+					this.$sliderWrap.swipe({
+		        		// Vertical swipe
+						swipeDown:function() { that.next(); },
+						swipeUp:function() { that.prev(); },
+						threshold: swipeThreshold,
+						// Prevent accidental scrolling when swiping the slider
+						allowPageScroll: 'horizontal',
+						// Simulate touch events on unsupported devices
+						fallbackToMouseEvents: true
+					});
+				}
+			}
+			// Display warning, that TouchSwipe library is not initialised
+			else {
+				alert('WARNING! TouchSwipe plugin not detected!');
+			}
+        }        
 
         ,next: function () {
             if (this.settings.transition === 'custom') {
