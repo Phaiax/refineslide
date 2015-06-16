@@ -468,7 +468,7 @@
                 // Set event listener to '.rs-slider' <ul>
                 that.listenTo = that.RS.$slider;
 
-                this.RS.$sliderBG.css('perspective', 1000);
+                this.RS.$sliderBG.css('perspective', that.RS.settings.perspective);
 
                 // props for slide <li>s
                 that.RS.$currentSlide.css({
